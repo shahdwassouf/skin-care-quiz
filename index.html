@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>اختبار تحديد نوع البشرة | Skin Care Quiz</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Cairo, Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 100%);
+        padding: 20px;
+      }
+
+      .card {
+        background: #ffffff;
+        padding: 30px 25px;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 440px;
+        text-align: center;
+        box-shadow: 0 15px 35px rgba(238, 156, 167, 0.35);
+        transition: all 0.3s ease;
+      }
+
+      .quiz-header {
+        margin-bottom: 20px;
+      }
+
+      .quiz-header h2 {
+        color: #d81b60;
+        margin: 0 0 8px 0;
+        font-size: 22px;
+      }
+
+      .quiz-header p {
+        color: #888;
+        font-size: 13px;
+        margin: 0;
+      }
+
+      /* شريط التقدم */
+      .progress-container {
+        width: 100%;
+        background-color: #fce4ec;
+        border-radius: 10px;
+        height: 8px;
+        margin: 15px 0 25px 0;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #f48fb1, #e91e63);
+        width: 20%;
+        transition: width 0.4s ease;
+      }
+
+      .question-title {
+        font-size: 17px;
+        color: #333;
+        margin-bottom: 20px;
+        line-height: 1.5;
+        font-weight: 600;
+      }
+
+      .answers-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .answer-btn {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #f8bbd0;
+        background-color: #fff9fb;
+        border-radius: 14px;
+        font-size: 14px;
+        color: #4a4a4a;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        text-align: right;
+        line-height: 1.4;
+      }
+
+      .answer-btn:hover {
+        background-color: #fce4ec;
+        border-color: #f48fb1;
+        transform: translateY(-2px);
+      }
+
+      .answer-btn.selected {
+        background-color: #f8bbd0;
+        border-color: #e91e63;
+        color: #880e4f;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
+      }
+
+      #next-btn, #restart-btn {
+        margin-top: 25px;
+        background: linear-gradient(135deg, #e91e63, #d81b60);
+        color: #fff;
+        border: none;
+        padding: 14px;
+        border-radius: 14px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        box-shadow: 0 6px 18px rgba(233, 30, 99, 0.3);
+        transition: all 0.3s ease;
+      }
+
+      #next-btn:hover, #restart-btn:hover {
+        opacity: 0.95;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(233, 30, 99, 0.4);
+      }
+
+      #next-btn:disabled {
+        background: #e0e0e0;
+        color: #a0a0a0;
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      /* قسم النتيجة */
+      .result-box {
+        display: none;
+      }
+
+      .result-icon {
+        font-size: 55px;
+        margin-bottom: 10px;
+      }
+
+      .result-title {
+        font-size: 24px;
+        color: #ad1457;
+        margin-bottom: 15px;
+        font-weight: bold;
+      }
+
+      .result-desc {
+        background: #fff5f8;
+        padding: 18px;
+        border-radius: 14px;
+        border-right: 4px solid #e91e63;
+        text-align: right;
+        font-size: 14px;
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <!-- قسم الكويز -->
+      <div id="quiz-section">
+        <div class="quiz-header">
+          <h2>🌸 اكتشفي نوع بشرتك 🌸</h2>
+          <p id="step-count">السؤال 1 من 5</p>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-bar" id="progress"></div>
+        </div>
+
+        <div class="question-title" id="question">جاري تحميل السؤال...</div>
+        <div class="answers-container" id="answers"></div>
+
+        <button id="next-btn" disabled>السؤال التالي ←</button>
+      </div>
+
+      <!-- قسم النتيجة -->
+      <div id="result-section" class="result-box">
+        <div class="result-icon" id="result-icon">✨</div>
+        <div class="result-title" id="result-type">نوع بشرتك هو...</div>
+        <div class="result-desc" id="result-details"></div>
+        <button id="restart-btn">إعادة الاختبار 🔄</button>
+      </div>
+    </div>
+
+    <script>
+      // الأسئلة الخمسة الملمة بنوع البشرة
+      const quizData = [
+        {
+          question: "1. كيف تشعر بشرتك بعد غسل وجهك مباشرة بالغسول (بدون وضع مرطب)؟",
+          options: [
+            { text: "مشدودة، جافة، وأحياناً بها قشور خفيفة.", type: "dry" },
+            { text: "دهنية ولامعة عند الجبهة والأنف، وجافة/عادية على الخدين.", type: "combo" },
+            { text: "دهنية بالكامل مع شعور بطبقة زيتية في كل الوجه.", type: "oily" }
+          ]
+        },
+        {
+          question: "2. في منتصف اليوم، كيف يبدو مظهر بشرتك في المرآة؟",
+          options: [
+            { text: "باهتة ومشدودة وتحتاج إلى ترطيب عاجل.", type: "dry" },
+            { text: "لمعان واضح في منطقة الجبهة والأنف (T-Zone) فقط.", type: "combo" },
+            { text: "لمعان شديد ومسامات واسعة واضحة في أغلب الوجه.", type: "oily" }
+          ]
+        },
+        {
+          question: "3. ما مدى ظهور الحبوب والمسامات الواسعة في بشرتك؟",
+          options: [
+            { text: "المسامات شبه غير مرئية والنادر جداً ظهور حبوب.", type: "dry" },
+            { text: "مسامات واسعة وحبوب أحياناً في الأنف والجبهة فقط.", type: "combo" },
+            { text: "مسامات واسعة، ورؤوس سوداء وحبوب تظهر باستمرار.", type: "oily" }
+          ]
+        },
+        {
+          question: "4. كيف تتفاعل بشرتك عند استخدام مرطب كريمي ثقيل؟",
+          options: [
+            { text: "تمتصه بسرعة وتصبح ناعمة ومريحة جداً.", type: "dry" },
+            { text: "يناسب الخدين ولكنه يسبب ثقلاً ولمعاناً في الجبهة والأنف.", type: "combo" },
+            { text: "يسبب لمعاناً سريعاً، ثقلاً، وربما انسداداً للمسام.", type: "oily" }
+          ]
+        },
+        {
+          question: "5. كيف يكون ثبات المكياج أو واقي الشمس على بشرتك خلال اليوم؟",
+          options: [
+            { text: "يتكتل أو يظهر تقشراً جافاً في بعض المناطق.", type: "dry" },
+            { text: "يثبت على الخدود ويتلاشى أو يلمع عند الأنف والجبهة.", type: "combo" },
+            { text: "ينزلق ويلمع سريعاً في الوجه كاملاً ويحتاج لتثبيت ببرودرة.", type: "oily" }
+          ]
+        }
+      ];
+
+      // تفاصيل النتائج والنصائح
+      const resultsInfo = {
+        dry: {
+          title: "بشرتك جافة 🌵",
+          icon: "🧴",
+          desc: "بشرتك تفقد الرطوبة بسرعة وتحتاج إلى تغذية وتثبيت للرطوبة.<br><br>💡 <b>نصيحة العناية:</b> استخدمي غسولاً كريمياً لطيفاً، وكريمات مرطبة غنية بحمض الهيالورونيك والسيراميد، وتجنبي الغسولات الرغوية القاسية."
+        },
+        combo: {
+          title: "بشرتك مختلطة ☯️",
+          icon: "✨",
+          desc: "تجمع بشرتك بين المناطق الدهنية في منتصف الوجه (الجبهة والأنف) والمناطق الجافة أو العادية على الخدين.<br><br>💡 <b>نصيحة العناية:</b> استخدمي مرطبات خفيفة الوزن (Gel-Cream) توازن الإفرازات، واعتني بمنطقة T-Zone بغسول موازن."
+        },
+        oily: {
+          title: "بشرتك دهنية 💧",
+          icon: "🌿",
+          desc: "تفرز بشرتك كميات زائدة من الزيوت الطبيعية، مما يمنحها لمعاناً ويجعلها أكثر عرضة للمسام الواسعة والحبوب.<br><br>💡 <b>نصيحة العناية:</b> اعتمدي على غسول يحتوي على حمض الساليسليك، واستخدمي مرطبات جل خالية من الزيوت (Oil-Free) وواقي شمس مطفي (Matte)."
+        }
+      };
+
+      let currentIndex = 0;
+      let selectedType = null;
+      const scores = { dry: 0, combo: 0, oily: 0 };
+
+      // العناصر من الـ HTML
+      const questionEl = document.getElementById("question");
+      const answersEl = document.getElementById("answers");
+      const nextBtn = document.getElementById("next-btn");
+      const progressEl = document.getElementById("progress");
+      const stepCountEl = document.getElementById("step-count");
+      
+      const quizSection = document.getElementById("quiz-section");
+      const resultSection = document.getElementById("result-section");
+      const resultIcon = document.getElementById("result-icon");
+      const resultType = document.getElementById("result-type");
+      const resultDetails = document.getElementById("result-details");
+      const restartBtn = document.getElementById("restart-btn");
+
+      function loadQuestion() {
+        selectedType = null;
+        nextBtn.disabled = true;
+        nextBtn.textContent = currentIndex === quizData.length - 1 ? "عرض النتيجة ✨" : "السؤال التالي ←";
+
+        const currentQ = quizData[currentIndex];
+        questionEl.textContent = currentQ.question;
+        stepCountEl.textContent = `السؤال ${currentIndex + 1} من ${quizData.length}`;
+        progressEl.style.width = `${((currentIndex + 1) / quizData.length) * 100}%`;
+
+        answersEl.innerHTML = "";
+        currentQ.options.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.className = "answer-btn";
+          btn.textContent = opt.text;
+          btn.onclick = () => selectOption(btn, opt.type);
+          answersEl.appendChild(btn);
+        });
+      }
+
+      function selectOption(button, type) {
+        document.querySelectorAll(".answer-btn").forEach((b) => b.classList.remove("selected"));
+        button.classList.add("selected");
+        selectedType = type;
+        nextBtn.disabled = false;
+      }
+
+      nextBtn.onclick = () => {
+        if (!selectedType) return;
+        scores[selectedType]++;
+
+        if (currentIndex < quizData.length - 1) {
+          currentIndex++;
+          loadQuestion();
+        } else {
+          showResult();
+        }
+      };
+
+      function showResult() {
+        quizSection.style.display = "none";
+        resultSection.style.display = "block";
+
+        // تحديد النوع الأكثر تكراراً
+        let finalType = "combo";
+        if (scores.dry > scores.combo && scores.dry > scores.oily) finalType = "dry";
+        else if (scores.oily > scores.dry && scores.oily > scores.combo) finalType = "oily";
+
+        const info = resultsInfo[finalType];
+        resultIcon.textContent = info.icon;
+        resultType.textContent = info.title;
+        resultDetails.innerHTML = info.desc;
+      }
+
+      restartBtn.onclick = () => {
+        currentIndex = 0;
+        scores.dry = 0;
+        scores.combo = 0;
+        scores.oily = 0;
+        resultSection.style.display = "none";
+        quizSection.style.display = "block";
+        loadQuestion();
+      };
+
+      // تشغيل الكويز لأول مرة
+      loadQuestion();
+    </script>
+  </body>
+</html>
